@@ -254,39 +254,10 @@ It is an inplace operation, the return value is non-sense."
 	     ))
   )
 
-(defun la-hermite (mat)
-  "Return the hermite form of matrix MAT."
-  (let* ((m mat)
-	 (shape (la-shape m))
-	 (n1 (car shape))
-	 (n2 (cadr shape))
-	 (n (seq-min shape))
-	 )
-    (dotimes (i n m)
-      ;; Find the maximum
-      (let* ((row (la--slice (la-col m i) i n2))
-	     (idx-maxval (la--argmaxabs row)))
-	;; Do operations only when the row contains at least one value
-	;; that is non-zero.
-	(if (car idx-maxval)
-	    ;; We've found the maximum.
-	    (progn
-	      ;; Exchange max value to the top to reduce error.
-	      (la--exchange-row m (+ i (car idx-maxval)) i)
-	      (setf row (la--slice (la-col m i) i n2))
-	      ;; Make this line begin with 1.
-	      (la--multiply-row m i (/ 1.0 (aref row 0)))
-	      ;; Elimate the first element in the remaining rows.
-	      (dotimes (j (- n2 i 1))
-		(la--stack-row m (+ i j 1) i (- (aref row (+ j 1))))
-		))))))
-  )
-
-
 (defun la-solve-mm (A B)
   "Solve matrix function A · X = B."
-  (let* ((m A)
-	 (res B)
+  (let* ((m (copy-tree A t))
+	 (res (copy-tree B t))
 	 (shape (la-shape m))
 	 (shape2 (la-shape res))
 	 (n (car shape)))
@@ -324,6 +295,44 @@ It is an inplace operation, the return value is non-sense."
   (la-solve-mm m (la-identity (car (la-shape m))))
   )
 
+(defun la-hermite (a &optional p)
+  "Hermite decomposition of matrix A.
+This function returns two matrixes, P and H, which satisfies
+P · A = H, where H is the hermite form and P represents the
+transformation.  The optional argument p is used for record the
+transformation, which defaults to identity matrix."
+  (let* ((h (copy-tree a t))
+	 (shape (la-shape h))
+	 (n1 (car shape))
+	 (n2 (cadr shape))
+	 (p (or (copy-tree p t) (la-identity n1)))
+	 (n (seq-min shape))
+	 )
+    (dotimes (i n (list h p))
+      ;; Find the maximum value in the row.
+      (let* ((row (la--slice (la-col h i) i n1))
+	     (idx-maxval (la--argmaxabs row))
+	     (c))
+	;; Do operations only when the row contains at least one value
+	;; that is non-zero.
+	(if (car idx-maxval)
+	    (progn
+	      ;; Exchange max value to the top to reduce error.
+	      (setf c (+ i (car idx-maxval)))
+	      (la--exchange-row h c i) (la--exchange-row p c i)
+	      ;; Make this line begin with 1.
+	      (setf row (la--slice (la-col h i) i n1)
+		    c (/ 1.0 (aref row 0)))
+	      (la--multiply-row h i c) (la--multiply-row p i c)
+	      ;; Elimate the first element in the remaining rows.
+	      (setf row (la-col h i))
+	      (dotimes (j n)
+		(if (equal i j) ()
+		  (setf c (- (aref row j)))
+		  (la--stack-row h j i c) (la--stack-row p j i c)
+		  )))))))
+  )
+
 (defun la--test-function ()
   "Private function."
   (let* ((v1 [1 2])
@@ -341,7 +350,7 @@ It is an inplace operation, the return value is non-sense."
     (cl-assert (equal (la-shape v1) '(2)) t "error in la-shape")
     (cl-assert (equal (la-shape m2) '(3 2)) t "error in la-shape")
     (cl-assert (equal (la-transpose m2) m2t) t "error in la-transpose")
-    (cl-assert (equal (la-identity 4) m3) t "error in la-identity") 
+    (cl-assert (equal (la-identity 4) m3) t "error in la-identity")
     
     (cl-assert (equal (la-cwise-vv * v1 [4 5]) [4 10]) "error in la-cwise-vv")
     (cl-assert (equal (la-cwise-mm + m1 m4) [[6 8] [10 12]]) "error in la-cwise-mm")
@@ -355,6 +364,10 @@ It is an inplace operation, the return value is non-sense."
     (cl-assert (equal (la-norm1-m [[1 2] [3 -4]]) 10) "error in la-norm1-v")
     (cl-assert (< (la-norm1-v (la-sub-vv (la-solve-mv m1 [4 10]) [2 1])) 1e-5) "error in la-solve-mv")
     (cl-assert (< (la-norm1-m (la-sub-mm (la-dot-mm m1 (la-inv m1)) (la-identity 2))) 1e-5) "error in la-solve-mv")
+    (cl-assert (< (la-norm1-m (la-sub-mm (car (la-hermite [[1 1 2] [0 1 1] [1 2 3]])) [[1 0 1] [0 1 1] [0 0 0]])) 1e-5) "error in la-hermite (H not correct)")
+    (cl-assert (< (la-norm1-m (la-sub-mm (cadr (la-hermite [[1 1 2] [0 1 1] [1 2 3]])) [[1 -1 0] [0 1 0] [-1 -1 1]])) 1e-5) "error in la-hermite (P not correct)")
+
+
     
     )
   )
