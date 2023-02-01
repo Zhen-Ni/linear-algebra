@@ -89,6 +89,27 @@
   )
 
 
+(defun la-kron (a b)
+  "Kronecker product̨̨ of matrix A and B."
+  (let* ((shape1 (la-shape a))
+	 (shape2 (la-shape b))
+	 (n1 (car shape1))
+	 (n2 (cadr shape1))
+	 (n3 (car shape2))
+	 (n4 (cadr shape2))
+	 (nx (* n1 n3))
+	 (ny (* n2 n4))
+	 (res (la-matrix nx ny))
+	 )
+    (dotimes (i nx res)
+      (dotimes (j ny)
+	(setf (aref (aref res i) j)
+	      (* (aref (aref a (/ i n3)) (/ j n4))
+		 (aref (aref b (% i n3)) (% j n4))
+		 ))))
+    )
+  )
+
 ;;; Arithmetical operations.
 
 ;; Macro to avoid repeated code.
@@ -351,6 +372,7 @@ transformation, which defaults to identity matrix."
     (cl-assert (equal (la-shape m2) '(3 2)) t "error in la-shape")
     (cl-assert (equal (la-transpose m2) m2t) t "error in la-transpose")
     (cl-assert (equal (la-identity 4) m3) t "error in la-identity")
+    (cl-assert (equal (la-kron [[1 2] [3 4]] [[1 2] [3 4]]) [[1 2 2 4] [3 4 6 8] [3 6 4 8] [9 12 12 16]]) "error in la-kron")
     
     (cl-assert (equal (la-cwise-vv * v1 [4 5]) [4 10]) "error in la-cwise-vv")
     (cl-assert (equal (la-cwise-mm + m1 m4) [[6 8] [10 12]]) "error in la-cwise-mm")
@@ -359,7 +381,7 @@ transformation, which defaults to identity matrix."
     (cl-assert (equal (la-dot-vv [1 2 3] [3 2 1]) 10) "error in la-dot-vv")
     (cl-assert (equal (la-dot-mv m1 [2 1]) [4 10]) "error in la-dot-vm")
     (cl-assert (equal (la-dot-vm [2 1] (la-transpose m1)) [4 10]) "error in la-dot-mv")
-    (cl-assert (equal (la-dot-mm m5 [[1] [2] [3]]) [[14] [32]]) "error in la-dot-mm") 
+    (cl-assert (equal (la-dot-mm m5 [[1] [2] [3]]) [[14] [32]]) "error in la-dot-mm")
 
     (cl-assert (equal (la-norm1-m [[1 2] [3 -4]]) 10) "error in la-norm1-v")
     (cl-assert (< (la-norm1-v (la-sub-vv (la-solve-mv m1 [4 10]) [2 1])) 1e-5) "error in la-solve-mv")
