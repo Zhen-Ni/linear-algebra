@@ -12,6 +12,14 @@
 
 ;;; Basic storage operations.
 
+(defmacro la-at (v &rest indexes)
+  """Access multi-dimentional vector V by INDEXES."""
+  (let ((res v))
+    (dotimes (i (length indexes) res)
+      (setf res `(aref ,res ,(nth i indexes)))
+      )
+    )
+  )
 
 (defun la-vector (n &optional init)
   "Return a vector of size N, with values initialized to INIT."
@@ -89,28 +97,29 @@
   )
 
 
-(defun la-kron (a b)
-  "Kronecker product̨̨ of matrix A and B."
-  (let* ((shape1 (la-shape a))
-	 (shape2 (la-shape b))
-	 (n1 (car shape1))
-	 (n2 (cadr shape1))
-	 (n3 (car shape2))
-	 (n4 (cadr shape2))
-	 (nx (* n1 n3))
-	 (ny (* n2 n4))
-	 (res (la-matrix nx ny))
-	 )
-    (dotimes (i nx res)
-      (dotimes (j ny)
-	(setf (aref (aref res i) j)
-	      (* (aref (aref a (/ i n3)) (/ j n4))
-		 (aref (aref b (% i n3)) (% j n4))
-		 ))))
-    )
+;;; Arithmetical operations.
+
+;; Macro to avoid repeated code.
+(defmacro la-cwise-v (op v)
+  "Do element-wise operation OP on vector V."
+  `(cl-map 'vector ',op ,v)
   )
 
-;;; Arithmetical operations.
+(defun la-neg-v (v)
+  "Negative V."
+  (la-cwise-v - v)
+  )
+
+;; Macro to avoid repeated code.
+(defmacro la-cwise-m (op m)
+  "Do element-wise operation OP on vector M."
+  `(la-cwise-v (lambda (v) (la-cwise-v ,op v)) ,m)
+  )
+
+(defun la-neg-m (m)
+  "Negative M."
+  (la-cwise-m - m)
+  )
 
 ;; Macro to avoid repeated code.
 (defmacro la-cwise-vv (op v1 v2)
@@ -207,6 +216,26 @@
     )
   )
 
+(defun la-kron (a b)
+  "Kronecker product̨̨ of matrix A and B."
+  (let* ((shape1 (la-shape a))
+	 (shape2 (la-shape b))
+	 (n1 (car shape1))
+	 (n2 (cadr shape1))
+	 (n3 (car shape2))
+	 (n4 (cadr shape2))
+	 (nx (* n1 n3))
+	 (ny (* n2 n4))
+	 (res (la-matrix nx ny))
+	 )
+    (dotimes (i nx res)
+      (dotimes (j ny)
+	(setf (aref (aref res i) j)
+	      (* (aref (aref a (/ i n3)) (/ j n4))
+		 (aref (aref b (% i n3)) (% j n4))
+		 ))))
+    )
+  )
 
 ;;; Linear algebra operations.
 
