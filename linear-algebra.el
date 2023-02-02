@@ -347,9 +347,9 @@ It is an inplace operation, the return value is non-sense."
 
 (defun la-hermite (a &optional p)
   "Hermite decomposition of matrix A.
-This function returns two matrixes, P and H, which satisfies
+This function returns two matrixes, H and P, which satisfies
 P · A = H, where H is the hermite form and P represents the
-transformation.  The optional argument p is used for record the
+transformation.  The optional argument P is used for record the
 transformation, which defaults to identity matrix."
   (let* ((h (copy-tree a t))
 	 (shape (la-shape h))
@@ -383,6 +383,20 @@ transformation, which defaults to identity matrix."
 		  )))))))
   )
 
+(defun la-rank (m)
+  "The rank of matrix M.
+Use this function with care! The return
+value is usually incorrect due to numerical error."
+  (let ((h (car (la-hermite m)))
+	(rank 0))
+    (dotimes (i (car (la-shape h)) rank)
+      (if (car (la--argmaxabs (aref h i)))
+	  (setf rank (+ rank 1))
+	()
+	)
+      )
+    )
+  )
 
 
 (provide 'linear-algebra)

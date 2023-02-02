@@ -46,8 +46,8 @@
     (cl-assert (< (la-norm1-m (la-sub-mm (la-dot-mm m1 (la-inv m1)) (la-identity 2))) 1e-5) "error in la-solve-mv")
     (cl-assert (< (la-norm1-m (la-sub-mm (car (la-hermite [[1 1 2] [0 1 1] [1 2 3]])) [[1 0 1] [0 1 1] [0 0 0]])) 1e-5) "error in la-hermite (H not correct)")
     (cl-assert (< (la-norm1-m (la-sub-mm (cadr (la-hermite [[1 1 2] [0 1 1] [1 2 3]])) [[1 -1 0] [0 1 0] [-1 -1 1]])) 1e-5) "error in la-hermite (P not correct)")
-
-
+    (cl-assert (equal (la-rank [[1 2 3] [3 6 9]]) 1) "error in la-rank")
+    (cl-assert (equal (la-rank [[1 2 3] [3 6 7]]) 2) "error in la-rank")
     
     )
   "test complete"
