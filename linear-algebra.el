@@ -257,6 +257,15 @@
     res)
   )
 
+(defun la-norm2-v (v)
+  "The L2-norm of vector V."
+  (let ((res 0))
+    (seq-doseq (x v)
+      (setf res (+ res (* x x)))
+      )
+    (sqrt res))
+  )
+
 (defun la--exchange-row (m l1 l2)
   "Exchange the rows L1 and L2 of matrix M.
 It is an inplace operation, the return value is non-sense."
@@ -396,6 +405,48 @@ value is usually incorrect due to numerical error."
 	)
       )
     )
+  )
+
+
+(defun la-project-vv (v1 v2)
+  "Project vector V1 onto vector V2."
+  (la-cwise-v (lambda (x) (* x (/ (la-dot-vv v1 v2) (la-dot-vv v2 v2)))) v2)
+  )
+
+
+
+
+(defun la-gram-schmidt-qr (m)
+  "QR decomposition of matrix M by Gram-Schmidt's method."
+  (let* ((n (car (la-shape m)))
+	 (alpha (la-transpose m))
+	 (Q (la-matrix n n))
+	 (R (la-matrix n n))
+	 tmp)
+    ;; Get unnormalized Q (Gram-Schmidt normalization)
+    (dotimes (i n)
+      (setf (aref Q i) (aref alpha i))
+      (dotimes (j i)
+	(setf (aref Q i)
+	      (la-sub-vv (aref Q i) (la-project-vv (aref alpha i) (aref Q j))))
+	))
+    ;; Get the diagnoal elements of R.
+    (dotimes (i n)
+      (setf tmp (la-norm2-v (aref Q i))
+	    (la-at R i i) tmp)
+      )
+     ;; Normalize Q
+     (dotimes (i n)
+       (setf tmp (/ 1.0 (la-norm2-v (aref Q i)))
+	     (aref Q i) (la-cwise-v (lambda (x) (* x tmp)) (aref Q i)))
+       )
+     ;; The rest of the elements of R.
+     (dotimes (i n)
+       (dotimes (j i)
+	 (setf (la-at R j i) (la-dot-vv (aref alpha i) (aref Q j) ))
+	 ))
+     (list (la-transpose Q) R)
+     )
   )
 
 

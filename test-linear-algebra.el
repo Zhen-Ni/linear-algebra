@@ -19,6 +19,7 @@
 	 (m3 [[1 0 0 0] [0 1 0 0] [0 0 1 0] [0 0 0 1]])
 	 (m4 [[5 6] [7 8]])
 	 (m5 [[1 2 3] [4 5 6]])
+	 (m6 [[3.0 2.0] [4.0 1.0]])
 	 )
 	
     (cl-assert (equal (la-at m1 0 1) 2) "error in la-at")
@@ -42,15 +43,19 @@
     (cl-assert (equal (la-kron [[1 2] [3 4]] [[1 2] [3 4]]) [[1 2 2 4] [3 4 6 8] [3 6 4 8] [9 12 12 16]]) "error in la-kron")
 
     (cl-assert (equal (la-norm1-m [[1 2] [3 -4]]) 10) "error in la-norm1-v")
+    (cl-assert (equal (la-norm2-v [3 4]) 5.0) "error in la-norm2-v")
     (cl-assert (< (la-norm1-v (la-sub-vv (la-solve-mv m1 [4 10]) [2 1])) 1e-5) "error in la-solve-mv")
     (cl-assert (< (la-norm1-m (la-sub-mm (la-dot-mm m1 (la-inv m1)) (la-identity 2))) 1e-5) "error in la-solve-mv")
     (cl-assert (< (la-norm1-m (la-sub-mm (car (la-hermite [[1 1 2] [0 1 1] [1 2 3]])) [[1 0 1] [0 1 1] [0 0 0]])) 1e-5) "error in la-hermite (H not correct)")
     (cl-assert (< (la-norm1-m (la-sub-mm (cadr (la-hermite [[1 1 2] [0 1 1] [1 2 3]])) [[1 -1 0] [0 1 0] [-1 -1 1]])) 1e-5) "error in la-hermite (P not correct)")
     (cl-assert (equal (la-rank [[1 2 3] [3 6 9]]) 1) "error in la-rank")
     (cl-assert (equal (la-rank [[1 2 3] [3 6 7]]) 2) "error in la-rank")
-    
+    (cl-assert (< (la-norm1-v (la-sub-vv (la-project-vv [3.0 4.0 5.0] [3.0 4.0 -5.0]) [0 0 0]))) "error in la-project-vv")
+    (cl-assert (< (la-norm1-v (la-sub-vv (la-project-vv [3.0 4.0 5.0] [1.0 0.0 0.0]) [1.0 0 0]))) "error in la-project-vv")
+    (cl-assert (< (la-norm1-m (la-sub-mm (car (la-gram-schmidt-qr m6)) [[.6 .8] [.8 -.6]])) 1e-5) "error in la-gram-schmidt-qr (Q not correct)")
+    (cl-assert (< (la-norm1-m (la-sub-mm (cadr (la-gram-schmidt-qr m6)) [[5 2] [0 1]])) 1e-5) "error in la-gram-schmidt-qr (R not correct)")
     )
-  "test complete"
+  "test complete successfully"
   )
 
 (message (la--test-function))
