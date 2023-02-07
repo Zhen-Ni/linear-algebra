@@ -23,7 +23,7 @@
 
 (defun la-vector (n &optional init)
   "Return a vector of size N, with values initialized to INIT."
-  (make-vector n (or init 0))
+  (make-vector n (or init 0.0))
   )
 
 (defun la-matrix (n1 n2 &optional init)
@@ -96,6 +96,15 @@
     )
   )
 
+
+(defun la-diag (m)
+  "The diagnoal of matrix M."
+  (let* ((n (seq-min (la-shape m)))
+	 (res (la-vector n))
+	 )
+    (dotimes (i n res) (setf (aref res i) (la-at m i i)))
+    )
+  )
 
 ;;; Arithmetical operations.
 
@@ -449,6 +458,61 @@ value is usually incorrect due to numerical error."
      )
   )
 
+(defun la-eigenvalue (m &optional rtol)
+  "Get the eigenvalues of matrix M.
+QR decomposition is used for eigenvalue calculation, and the
+  tolerance is defined by RTOL.  The return value is a cons
+  containing the real and imaginary parts of the eigenvalues."
+  (let* ((A m) (shape (la-shape A)) (n (car shape))
+	 (rtol (or rtol 1e-6)))
+    (let* ((Q) (R) (QR)
+	   (continue-loop t)
+	   (A-old)
+	   )
+      ;; QR decomposition loop to obtain the [[maybe]] upper triangular
+      ;; matrix A.
+      (while continue-loop
+	(setf tmp (la-gram-schmidt-qr A))
+	(setf Q (car tmp) R (cadr tmp))
+	(setf A-old A)
+	(setf A (la-dot-mm R Q))
+	;; Whether the lower triangular of A is the same as A-old.  Note
+	;; that the upper triangular of A might not converge while
+	;; iteration, even when the eigenvalues are correctly found by
+	;; the diagnoal of A.
+	(let ((norm 0.0) (norm-diff 0.0))
+	  (dotimes (j n)
+	    (dotimes (k (+ j 1))
+	      (setf norm (+ norm (abs (la-at A j k))))
+	      (setf norm-diff (+ norm-diff (abs (- (la-at A j k)
+						   (la-at A-old j k)))))
+	      ))
+	  (setf continue-loop (<= (* rtol norm) norm-diff))
+	  ))
+      )
+    ;; Check A to find complex eigenvalues.
+    (let ((real (la-vector n)) (imag (make-vector n nil)) (idx) (val))
+      (dotimes (i n)
+	(if (aref imag i) ()
+	  (setf idx nil val -1.0)
+	  (setf (aref real i) (la-at A i i))
+	  (dotimes (j (- n i 1))
+	    (setf j (+ j 1))
+	    (if (< val (abs (la-at A j i)))
+		(setf val (abs (la-at A j i)) idx j))
+	    )
+	  (if (<= (abs (* rtol (aref real i))) val)
+	      (setf (aref imag i) idx (aref imag idx) i))
+	  ))
+      (dotimes (i n)
+	(if (aref imag i)
+	    (setf (aref imag i) (la-at A (aref imag i) i))
+	  (setf (aref imag i) 0.0)
+	  ))
+      (cons real imag)
+      )
+    )
+  )
 
 (provide 'linear-algebra)
 

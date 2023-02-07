@@ -20,6 +20,7 @@
 	 (m4 [[5 6] [7 8]])
 	 (m5 [[1 2 3] [4 5 6]])
 	 (m6 [[3.0 2.0] [4.0 1.0]])
+	 (m7 [[1 2 3] [4 5 6] [7 8 9]])
 	 )
 	
     (cl-assert (equal (la-at m1 0 1) 2) "error in la-at")
@@ -29,7 +30,8 @@
     (cl-assert (equal (la-shape m2) '(3 2)) t "error in la-shape")
     (cl-assert (equal (la-transpose m2) m2t) t "error in la-transpose")
     (cl-assert (equal (la-identity 4) m3) t "error in la-identity")
-    
+    (cl-assert (equal (la-diag m7) [1 5 9]) "error in la-diag")
+
     (cl-assert (equal (la-neg-v v1) [-1 -2]) "error in la-neg-v")
     (cl-assert (equal (la-neg-m m1) [[-1 -2] [-3 -4]]) "error in la-neg-m")
     (cl-assert (equal (la-cwise-vv * v1 [4 5]) [4 10]) "error in la-cwise-vv")
@@ -54,6 +56,10 @@
     (cl-assert (< (la-norm1-v (la-sub-vv (la-project-vv [3.0 4.0 5.0] [1.0 0.0 0.0]) [1.0 0 0]))) "error in la-project-vv")
     (cl-assert (< (la-norm1-m (la-sub-mm (car (la-gram-schmidt-qr m6)) [[.6 .8] [.8 -.6]])) 1e-5) "error in la-gram-schmidt-qr (Q not correct)")
     (cl-assert (< (la-norm1-m (la-sub-mm (cadr (la-gram-schmidt-qr m6)) [[5 2] [0 1]])) 1e-5) "error in la-gram-schmidt-qr (R not correct)")
+    (cl-assert (equal (la-eigenvalue [[2.0 6.0] [2.0 3.0]] 1e-50) '([6.0 -1.0] . [0.0 0.0])) "error in la-eigenvalue")
+    (cl-assert (equal (la-eigenvalue [[0.0 -1.0] [1.0 0.0]]) '([0.0 0.0] . [1.0 -1.0])) "error in la-eigenvalue")
+    (cl-assert (equal (la-eigenvalue [[1.0 1.0] [0.0 1.0]]) '([1.0 1.0] . [0.0 0.0])) "error in la-eigenvalue")
+    
     )
   "test complete successfully"
   )
