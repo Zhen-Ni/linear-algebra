@@ -375,10 +375,13 @@ transformation, which defaults to identity matrix."
 	 (n2 (cadr shape))
 	 (p (or (copy-tree p t) (la-identity n1)))
 	 (n (seq-min shape))
+	 (nullity 0)
+	 rowidx
 	 )
     (dotimes (i n (list h p))
+      (setf rowidx (- i nullity))
       ;; Find the maximum value in the row.
-      (let* ((row (la--slice (la-col h i) i n1))
+      (let* ((row (la--slice (la-col h i) rowidx n1))
 	     (idx-maxval (la--argmaxabs row))
 	     (c))
 	;; Do operations only when the row contains at least one value
@@ -386,19 +389,20 @@ transformation, which defaults to identity matrix."
 	(if (car idx-maxval)
 	    (progn
 	      ;; Exchange max value to the top to reduce error.
-	      (setf c (+ i (car idx-maxval)))
-	      (la--exchange-row h c i) (la--exchange-row p c i)
+	      (setf c (+ rowidx (car idx-maxval)))
+	      (la--exchange-row h c rowidx) (la--exchange-row p c rowidx)
 	      ;; Make this line begin with 1.
-	      (setf row (la--slice (la-col h i) i n1)
+	      (setf row (la--slice (la-col h i) rowidx n1)
 		    c (/ 1.0 (aref row 0)))
-	      (la--multiply-row h i c) (la--multiply-row p i c)
+	      (la--multiply-row h rowidx c) (la--multiply-row p rowidx c)
 	      ;; Elimate the first element in the remaining rows.
 	      (setf row (la-col h i))
 	      (dotimes (j n)
-		(if (equal i j) ()
+		(if (equal rowidx j) ()
 		  (setf c (- (aref row j)))
-		  (la--stack-row h j i c) (la--stack-row p j i c)
-		  )))))))
+		  (la--stack-row h j rowidx c) (la--stack-row p j rowidx c)
+		  )))
+	  (setf nullity (+ nullity 1))))))
   )
 
 (defun la-rank (m)
@@ -513,6 +517,27 @@ QR decomposition is used for eigenvalue calculation, and the
       )
     )
   )
+
+
+;; (defun la--eigenvect-helper (m lambda)
+;;   "Get the eigenvector with respect to egienvalue LAMBDA of matrix M."
+;;   (let* ((size (car (la-shape m)))
+;; 	 (A (la-sub-mm (la-cwise-m (lambda (x) (* x lambda)) (la-identity size)) m))
+;; 	 h
+;; 	 res
+;; 	)
+;;     (setf h (car (la-hermite A)))
+;;     (setf res (la-col h (- size 1)))
+;;     (setf (aref res (- size 1)) -1.0)
+;;     res
+;;     )
+;;   )
+
+;(la--eigenvect-helper [[1 1] [0 2]] 2)
+
+;(la-hermite [[0 -1] [0 -1]])
+   
+
 
 (provide 'linear-algebra)
 
