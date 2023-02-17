@@ -59,6 +59,9 @@
     (cl-assert (equal (la-eigenvalue [[2.0 6.0] [2.0 3.0]] 1e-50) '([6.0 -1.0] . [0.0 0.0])) "error in la-eigenvalue")
     (cl-assert (equal (la-eigenvalue [[0.0 -1.0] [1.0 0.0]]) '([0.0 0.0] . [1.0 -1.0])) "error in la-eigenvalue")
     (cl-assert (equal (la-eigenvalue [[1.0 1.0] [0.0 1.0]]) '([1.0 1.0] . [0.0 0.0])) "error in la-eigenvalue")
+    (cl-assert (equal (la-eigenvector [[1 1] [0 2]] 1) [1.0 0.0]) "error in la-eigenvector")
+    (cl-assert (< (la-norm1-v (la-sub-vv (la-eigenvector [[1 1] [0 2]] 2) [-0.707107 -0.707107])) 1e-5) "error in la-eigenvector")
+    (cl-assert (< (la-norm1-v (la-sub-vv (la-eigenvector m7 16.116844) [-0.23197068680233904 -0.5253220921732733 -0.8186735002057572])) 1e-5) "error in la-eigenvector")
     
     )
   "test complete successfully"

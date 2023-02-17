@@ -48,7 +48,7 @@
   "Return a vector which the elements are the N th row of matrix M."
   (aref m n)
 )
-  
+
 (defun la-col (m n)
   "Return a vector which the elements are the N th column of matrix M."
   (let* ((size (car (la-shape m)))
@@ -290,7 +290,7 @@ It is an inplace operation, the return value is non-sense."
   (setf (aref m l)
 	(cl-map 'vector (lambda (i) (* c i)) (aref m l)))
   )
-  
+
 (defun la--stack-row (m l1 l2 c)
   "Add row L1 of matrix M by the multipication of row L2 and scalar c.
 It is an inplace operation, the return value is non-sense."
@@ -302,17 +302,34 @@ It is an inplace operation, the return value is non-sense."
 
 
 (defun la--argmaxabs (vec)
-  "Find the index of the max abs value in VEC."
+  "Find the index of the max abs value in VEC.
+If all elements in VEC are 0, the returned idx will be nil."
   (let ((maxval 0)
 	(idx))
     (dotimes (i (length vec))
-      (if (< (abs maxval) (abs (elt vec i)))
-	  (setf idx i maxval (elt vec i))
+      (if (< (abs maxval) (abs (aref vec i)))
+	  (setf idx i maxval (aref vec i))
 	)
       )
     `(,idx ,maxval)
     )
   )
+
+
+(defun la--argminabs (vec)
+  "Find the index of the minimal abs value in VEC.
+If all elements in VEC are 1.0e+INF, the returned idx will be nil."
+  (let ((minval 1.0e+INF)
+	(idx))
+    (dotimes (i (length vec))
+      (if (< (abs (aref vec i)) (abs minval))
+	  (setf idx i minval (aref vec i))
+	)
+      )
+    `(,idx ,minval)
+    )
+  )
+
 
 (defun la--slice (vec start end)
   "Get a subset of vector VEC from element START to END."
@@ -352,7 +369,7 @@ It is an inplace operation, the return value is non-sense."
 	    ))
 	)))
   )
-  
+
 (defun la-solve-mv (A b)
   "Solve matrix function A · X = B."
   (la-col (la-solve-mm A (la-transpose (vector b))) 0)
@@ -519,24 +536,32 @@ QR decomposition is used for eigenvalue calculation, and the
   )
 
 
-;; (defun la--eigenvect-helper (m lambda)
-;;   "Get the eigenvector with respect to egienvalue LAMBDA of matrix M."
-;;   (let* ((size (car (la-shape m)))
-;; 	 (A (la-sub-mm (la-cwise-m (lambda (x) (* x lambda)) (la-identity size)) m))
-;; 	 h
-;; 	 res
-;; 	)
-;;     (setf h (car (la-hermite A)))
-;;     (setf res (la-col h (- size 1)))
-;;     (setf (aref res (- size 1)) -1.0)
-;;     res
-;;     )
-;;   )
-
-;(la--eigenvect-helper [[1 1] [0 2]] 2)
-
-;(la-hermite [[0 -1] [0 -1]])
-   
+ (defun la-eigenvector (m lambda)
+   "Get the eigenvector with respect to egienvalue LAMBDA of matrix M."
+   (let* ((size (car (la-shape m)))
+	  (A (la-sub-mm (la-cwise-m
+			 (lambda (x) (* x lambda)) (la-identity size)) m))
+ 	  res
+	  norm
+ 	  )
+     (dotimes (i size)
+       (if (car (la--argmaxabs (la-col A i))) ()
+	 (setf res (la-vector size 0.0))
+	 (setf (aref res i) 1.0)
+	 ))
+     (if res ()
+       ;; Switch the row with minimal norm to the last to avoid
+       ;; sigularity
+       (la--exchange-row A (- size 1)
+			 (car (la--argminabs
+			       (la-cwise-v (lambda (x) (la-norm2-v x)) A))))
+       (setf res (la-col (car (la-hermite (la--slice A 0 (- size 1)))) (- size 1)))
+       (setf res (vconcat res [-1.0]))
+       )
+     (setf norm (la-norm2-v res))
+     (la-cwise-v (lambda (x) (/ x norm)) res)
+     )
+   )
 
 
 (provide 'linear-algebra)
